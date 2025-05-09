@@ -1,0 +1,3377 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Pattern Memory Game</title>
+
+  <style>
+
+    :root {
+
+      --primary: #3b82f6;
+
+      --primary-hover: #2563eb;
+
+      --success: #10b981;
+
+      --error: #ef4444;
+
+      --background: #f8fafc;
+
+      --foreground: #0f172a;
+
+      --card: #ffffff;
+
+      --card-foreground: #0f172a;
+
+      --border: #e2e8f0;
+
+    }
+
+
+    @media (prefers-color-scheme: dark) {
+
+      :root {
+
+        --background: #0f172a;
+
+        --foreground: #f8fafc;
+
+        --card: #1e293b;
+
+        --card-foreground: #f8fafc;
+
+        --border: #334155;
+
+      }
+
+    }
+
+
+    * {
+
+      box-sizing: border-box;
+
+      margin: 0;
+
+      padding: 0;
+
+    }
+
+
+    body {
+
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+      background-color: var(--background);
+
+      color: var(--foreground);
+
+      line-height: 1.5;
+
+      padding: 1.5rem;
+
+      max-width: 1200px;
+
+      margin: 0 auto;
+
+    }
+
+
+    header {
+
+      text-align: center;
+
+      margin-bottom: 2rem;
+
+    }
+
+
+    h1 {
+
+      font-size: 2.5rem;
+
+      margin-bottom: 0.5rem;
+
+      background: linear-gradient(to right, var(--primary), #9333ea);
+
+      -webkit-background-clip: text;
+
+      -webkit-text-fill-color: transparent;
+
+      background-clip: text;
+
+      color: transparent;
+
+    }
+
+
+    .game-container {
+
+      display: flex;
+
+      flex-direction: column;
+
+      margin: 0 auto;
+
+      max-width: 800px;
+
+    }
+
+
+    .tabs {
+
+      display: flex;
+
+      margin-bottom: 1rem;
+
+      border-bottom: 1px solid var(--border);
+
+    }
+
+
+    .tab {
+
+      padding: 0.75rem 1.5rem;
+
+      cursor: pointer;
+
+      border: none;
+
+      background: none;
+
+      color: var(--foreground);
+
+      font-weight: 500;
+
+    }
+
+
+    .tab.active {
+
+      border-bottom: 2px solid var(--primary);
+
+      color: var(--primary);
+
+    }
+
+
+    .tab-content {
+
+      display: none;
+
+    }
+
+
+    .tab-content.active {
+
+      display: block;
+
+    }
+
+
+    .score-display {
+
+      display: flex;
+
+      justify-content: space-between;
+
+      margin-bottom: 2rem;
+
+      gap: 1rem;
+
+    }
+
+
+    .score-card {
+
+      flex: 1;
+
+      background-color: var(--card);
+
+      padding: 1rem;
+
+      border-radius: 0.5rem;
+
+      text-align: center;
+
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+
+    }
+
+
+    .score-label {
+
+      font-size: 0.75rem;
+
+      text-transform: uppercase;
+
+      color: #64748b;
+
+      margin-bottom: 0.25rem;
+
+    }
+
+
+    .score-value {
+
+      font-size: 1.875rem;
+
+      font-weight: 700;
+
+      color: var(--primary);
+
+    }
+
+
+    .game-message {
+
+      text-align: center;
+
+      font-size: 1.25rem;
+
+      margin-bottom: 1.5rem;
+
+      height: 2rem;
+
+    }
+
+
+    .pattern-dots {
+
+      display: flex;
+
+      justify-content: center;
+
+      margin-bottom: 1rem;
+
+    }
+
+
+    .pattern-dot {
+
+      width: 0.75rem;
+
+      height: 0.75rem;
+
+      border-radius: 50%;
+
+      margin: 0 0.25rem;
+
+      background-color: var(--border);
+
+    }
+
+
+    .pattern-dot.active {
+
+      background-color: var(--primary);
+
+    }
+
+
+    .pattern-dot.complete {
+
+      background-color: var(--success);
+
+    }
+
+
+    .game-board {
+
+      position: relative;
+
+      width: 300px;
+
+      height: 300px;
+
+      margin: 2.5rem auto;
+
+    }
+
+
+    .game-button {
+
+      position: absolute;
+
+      width: 80px;
+
+      height: 80px;
+
+      border-radius: 50%;
+
+      border: none;
+
+      cursor: pointer;
+
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+
+      transition: all 150ms ease;
+
+    }
+
+
+    .game-button:focus {
+
+      outline: none;
+
+      box-shadow: 0 0 0 2px var(--primary);
+
+    }
+
+
+    .game-button.red {
+
+      background-color: #ef4444;
+
+      top: 0;
+
+      left: 50%;
+
+      transform: translateX(-50%);
+
+    }
+
+
+    .game-button.green {
+
+      background-color: #10b981;
+
+      right: 0;
+
+      top: 50%;
+
+      transform: translateY(-50%);
+
+    }
+
+
+    .game-button.blue {
+
+      background-color: #3b82f6;
+
+      bottom: 0;
+
+      left: 50%;
+
+      transform: translateX(-50%);
+
+    }
+
+
+    .game-button.yellow {
+
+      background-color: #f59e0b;
+
+      left: 0;
+
+      top: 50%;
+
+      transform: translateY(-50%);
+
+    }
+
+
+    .game-button.active {
+
+      filter: brightness(1.3);
+
+      box-shadow: 0 0 15px rgba(255,255,255,0.7), 0 4px 8px rgba(0,0,0,0.2);
+
+    }
+
+
+    .game-button:hover:not(:disabled) {
+
+      filter: brightness(1.1);
+
+    }
+
+
+    .game-button.red:hover:not(:disabled) {
+
+      transform: translateX(-50%);
+
+      box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+
+    }
+
+
+    .game-button.green:hover:not(:disabled) {
+
+      transform: translateY(-50%);
+
+      box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+
+    }
+
+
+    .game-button.blue:hover:not(:disabled) {
+
+      transform: translateX(-50%);
+
+      box-shadow: 0 0 10px rgba(0, 0, 255, 0.5);
+
+    }
+
+
+    .game-button.yellow:hover:not(:disabled) {
+
+      transform: translateY(-50%);
+
+      box-shadow: 0 0 10px rgba(255, 255, 0, 0.5);
+
+    }
+
+
+    .controls {
+
+      display: flex;
+
+      justify-content: center;
+
+      gap: 1rem;
+
+      margin-top: 2rem;
+
+    }
+
+
+    .button {
+
+      padding: 0.75rem 1.5rem;
+
+      font-weight: 500;
+
+      border: none;
+
+      border-radius: 0.5rem;
+
+      cursor: pointer;
+
+      transition: background-color 150ms ease;
+
+    }
+
+
+    .primary-button {
+
+      background-color: var(--primary);
+
+      color: white;
+
+    }
+
+
+    .primary-button:hover {
+
+      background-color: var(--primary-hover);
+
+    }
+
+
+    .secondary-button {
+
+      background-color: var(--border);
+
+      color: var(--foreground);
+
+    }
+
+
+    .secondary-button:hover {
+
+      background-color: #cbd5e1;
+
+    }
+
+
+    .settings-container, .badges-container, .stats-container {
+
+      background-color: var(--card);
+
+      border-radius: 0.5rem;
+
+      padding: 1.5rem;
+
+      margin-bottom: 2rem;
+
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+
+    }
+
+
+    .settings-title, .badges-title, .stats-title {
+
+      font-size: 1.5rem;
+
+      font-weight: 700;
+
+      margin-bottom: 1.5rem;
+
+      color: var(--primary);
+
+    }
+
+
+    .settings-section {
+
+      margin-bottom: 2rem;
+
+    }
+
+
+    .settings-section-title {
+
+      font-weight: 500;
+
+      margin-bottom: 1rem;
+
+    }
+
+
+    .setting-row {
+
+      display: flex;
+
+      justify-content: space-between;
+
+      align-items: center;
+
+      margin-bottom: 1rem;
+
+    }
+
+
+    .toggle {
+
+      position: relative;
+
+      width: 48px;
+
+      height: 24px;
+
+    }
+
+
+    .toggle input {
+
+      opacity: 0;
+
+      width: 0;
+
+      height: 0;
+
+    }
+
+
+    .toggle-switch {
+
+      position: absolute;
+
+      cursor: pointer;
+
+      top: 0;
+
+      left: 0;
+
+      right: 0;
+
+      bottom: 0;
+
+      background-color: #cbd5e1;
+
+      transition: .4s;
+
+      border-radius: 24px;
+
+    }
+
+
+    .toggle-switch:before {
+
+      position: absolute;
+
+      content: "";
+
+      height: 18px;
+
+      width: 18px;
+
+      left: 3px;
+
+      bottom: 3px;
+
+      background-color: white;
+
+      transition: .4s;
+
+      border-radius: 50%;
+
+    }
+
+
+    input:checked + .toggle-switch {
+
+      background-color: var(--primary);
+
+    }
+
+
+    input:checked + .toggle-switch:before {
+
+      transform: translateX(24px);
+
+      background-color: white;
+
+    }
+
+    
+
+    @media (prefers-color-scheme: dark) {
+
+      .toggle-switch:before {
+
+        background-color: white;
+
+      }
+
+      
+
+      input:checked + .toggle-switch:before {
+
+        background-color: white;
+
+      }
+
+    }
+
+
+    .volume-control {
+
+      width: 100%;
+
+      display: flex;
+
+      align-items: center;
+
+      gap: 0.75rem;
+
+      margin-bottom: 1.5rem;
+
+    }
+
+
+    .volume-slider {
+
+      flex: 1;
+
+      height: 8px;
+
+      -webkit-appearance: none;
+
+      appearance: none;
+
+      background: #cbd5e1;
+
+      border-radius: 4px;
+
+      outline: none;
+
+    }
+
+
+    .volume-slider::-webkit-slider-thumb {
+
+      -webkit-appearance: none;
+
+      appearance: none;
+
+      width: 16px;
+
+      height: 16px;
+
+      border-radius: 50%;
+
+      background: var(--primary);
+
+      cursor: pointer;
+
+    }
+
+
+    .difficulty-select {
+
+      width: 100%;
+
+      padding: 0.5rem;
+
+      border-radius: 0.25rem;
+
+      background-color: #f1f5f9;
+
+      border: 1px solid #cbd5e1;
+
+      outline: none;
+
+    }
+
+    
+
+    @media (prefers-color-scheme: dark) {
+
+      .difficulty-select {
+
+        background-color: #334155;
+
+        border-color: #475569;
+
+        color: white;
+
+      }
+
+    }
+
+
+    .difficulty-select:focus {
+
+      border-color: var(--primary);
+
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+
+    }
+
+
+    .danger-button {
+
+      background-color: #ef4444;
+
+      color: white;
+
+      padding: 0.5rem 1rem;
+
+      border-radius: 0.25rem;
+
+      border: none;
+
+      font-weight: 500;
+
+      cursor: pointer;
+
+      transition: background-color 150ms ease;
+
+    }
+
+
+    .danger-button:hover {
+
+      background-color: #dc2626;
+
+    }
+
+
+    .badges-grid {
+
+      display: grid;
+
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+
+      gap: 1rem;
+
+    }
+
+
+    .badge-item {
+
+      background-color: #f1f5f9;
+
+      border-radius: 0.5rem;
+
+      padding: 1rem;
+
+      text-align: center;
+
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+
+    }
+
+    
+
+    @media (prefers-color-scheme: dark) {
+
+      .badge-item {
+
+        background-color: #334155;
+
+      }
+
+    }
+
+
+    .badge-item.locked {
+
+      opacity: 0.5;
+
+    }
+
+
+    .badge-icon {
+
+      width: 48px;
+
+      height: 48px;
+
+      background-color: #cbd5e1;
+
+      border-radius: 50%;
+
+      margin: 0 auto 0.75rem;
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: center;
+
+      font-size: 1.5rem;
+
+    }
+
+
+    .badge-name {
+
+      font-weight: 600;
+
+      margin-bottom: 0.25rem;
+
+    }
+
+
+    .badge-description {
+
+      font-size: 0.875rem;
+
+      color: #64748b;
+
+    }
+
+
+    .stats-grid {
+
+      display: grid;
+
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+
+      gap: 1rem;
+
+      margin-bottom: 1.5rem;
+
+    }
+
+
+    .stat-card {
+
+      background-color: #f1f5f9;
+
+      border-radius: 0.5rem;
+
+      padding: 1rem;
+
+      text-align: center;
+
+    }
+
+    
+
+    @media (prefers-color-scheme: dark) {
+
+      .stat-card {
+
+        background-color: #334155;
+
+      }
+
+    }
+
+
+    .stat-name {
+
+      font-size: 0.875rem;
+
+      color: #64748b;
+
+      margin-bottom: 0.25rem;
+
+    }
+
+
+    .stat-value {
+
+      font-size: 1.5rem;
+
+      font-weight: 600;
+
+      color: var(--primary);
+
+    }
+
+
+    .badge-notification {
+
+      position: fixed;
+
+      top: 1.5rem;
+
+      right: 1.5rem;
+
+      background-color: var(--card);
+
+      border-radius: 0.5rem;
+
+      padding: 1rem;
+
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+
+      display: flex;
+
+      align-items: center;
+
+      gap: 1rem;
+
+      transform: translateX(calc(100% + 1.5rem));
+
+      transition: transform 300ms ease;
+
+      z-index: 100;
+
+    }
+
+
+    .badge-notification.show {
+
+      transform: translateX(0);
+
+    }
+
+
+    .notification-icon {
+
+      width: 48px;
+
+      height: 48px;
+
+      background-color: var(--primary);
+
+      border-radius: 50%;
+
+      color: white;
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: center;
+
+      font-size: 1.5rem;
+
+      flex-shrink: 0;
+
+    }
+
+
+    .notification-content {
+
+      flex: 1;
+
+    }
+
+
+    .notification-title {
+
+      font-weight: 600;
+
+      margin-bottom: 0.25rem;
+
+    }
+
+
+    .notification-description {
+
+      font-size: 0.875rem;
+
+      color: #64748b;
+
+    }
+
+
+    .notification-close {
+
+      position: absolute;
+
+      top: 0.5rem;
+
+      right: 0.5rem;
+
+      background: none;
+
+      border: none;
+
+      cursor: pointer;
+
+      font-size: 1rem;
+
+      color: #64748b;
+
+    }
+
+
+    @keyframes pulse {
+
+      0% { transform: scale(1); }
+
+      50% { transform: scale(1.05); }
+
+      100% { transform: scale(1); }
+
+    }
+
+
+    @media (max-width: 640px) {
+
+      .score-display {
+
+        flex-direction: column;
+
+        gap: 0.5rem;
+
+      }
+
+      
+
+      .tabs {
+
+        overflow-x: auto;
+
+        white-space: nowrap;
+
+      }
+
+      
+
+      .badge-notification {
+
+        width: calc(100% - 3rem);
+
+      }
+
+    }
+
+  </style>
+
+</head>
+
+<body>
+
+  <header>
+
+    <h1>Pattern Memory Game</h1>
+
+    <p>Test your memory by repeating the pattern</p>
+
+  </header>
+
+
+  <div class="game-container">
+
+    <div class="tabs">
+
+      <button class="tab active" onclick="switchTab('game')">Game</button>
+
+      <button class="tab" onclick="switchTab('badges')">Badges</button>
+
+      <button class="tab" onclick="switchTab('stats')">Stats</button>
+
+      <button class="tab" onclick="switchTab('settings')">Settings</button>
+
+    </div>
+
+
+    <div id="game-tab" class="tab-content active">
+
+      <div class="score-display">
+
+        <div class="score-card">
+
+          <div class="score-label">Current Score</div>
+
+          <div id="current-score" class="score-value">0</div>
+
+        </div>
+
+        <div class="score-card">
+
+          <div class="score-label">Best Score</div>
+
+          <div id="best-score" class="score-value">0</div>
+
+        </div>
+
+        <div class="score-card">
+
+          <div class="score-label">Level</div>
+
+          <div id="level" class="score-value">1</div>
+
+        </div>
+
+      </div>
+
+
+      <div id="game-message" class="game-message">Press Start to Play</div>
+
+
+      <div id="pattern-dots" class="pattern-dots"></div>
+
+
+      <div class="game-board">
+
+        <button id="red-button" class="game-button red" disabled></button>
+
+        <button id="green-button" class="game-button green" disabled></button>
+
+        <button id="blue-button" class="game-button blue" disabled></button>
+
+        <button id="yellow-button" class="game-button yellow" disabled></button>
+
+      </div>
+
+
+      <div class="controls">
+
+        <button id="start-button" class="button primary-button">Start Game</button>
+
+        <button id="reset-button" class="button secondary-button">Reset</button>
+
+      </div>
+
+    </div>
+
+
+    <div id="badges-tab" class="tab-content">
+
+      <div class="badges-container">
+
+        <h2 class="badges-title">Badges</h2>
+
+        <div id="badges-grid" class="badges-grid">
+
+          <!-- Badge items will be generated here -->
+
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <div id="stats-tab" class="tab-content">
+
+      <div class="stats-container">
+
+        <h2 class="stats-title">Game Statistics</h2>
+
+        <div class="stats-grid">
+
+          <div class="stat-card">
+
+            <div class="stat-name">Games Played</div>
+
+            <div id="stat-games" class="stat-value">0</div>
+
+          </div>
+
+          <div class="stat-card">
+
+            <div class="stat-name">Highest Score</div>
+
+            <div id="stat-high-score" class="stat-value">0</div>
+
+          </div>
+
+          <div class="stat-card">
+
+            <div class="stat-name">Total Patterns</div>
+
+            <div id="stat-patterns" class="stat-value">0</div>
+
+          </div>
+
+          <div class="stat-card">
+
+            <div class="stat-name">Total Score</div>
+
+            <div id="stat-total-score" class="stat-value">0</div>
+
+          </div>
+
+          <div class="stat-card">
+
+            <div class="stat-name">Accuracy</div>
+
+            <div id="stat-accuracy" class="stat-value">0%</div>
+
+          </div>
+
+          <div class="stat-card">
+
+            <div class="stat-name">Win Streak</div>
+
+            <div id="stat-streak" class="stat-value">0</div>
+
+          </div>
+
+          <div class="stat-card">
+
+            <div class="stat-name">Best Streak</div>
+
+            <div id="stat-best-streak" class="stat-value">0</div>
+
+          </div>
+
+          <div class="stat-card">
+
+            <div class="stat-name">Total Time</div>
+
+            <div id="stat-playtime" class="stat-value">0h</div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <div id="settings-tab" class="tab-content">
+
+      <div class="settings-container">
+
+        <h2 class="settings-title">Settings</h2>
+
+        
+
+        <div class="settings-section">
+
+          <h3 class="settings-section-title">Audio</h3>
+
+          
+
+          <div class="setting-row">
+
+            <label for="music-toggle">Background Music</label>
+
+            <label class="toggle">
+
+              <input type="checkbox" id="music-toggle">
+
+              <span class="toggle-switch"></span>
+
+            </label>
+
+          </div>
+
+          
+
+          <div class="volume-control">
+
+            <span>🔈</span>
+
+            <input type="range" id="volume-slider" min="0" max="100" value="70" class="volume-slider">
+
+            <span>🔊</span>
+
+          </div>
+
+          
+
+          <div class="setting-row">
+
+            <label for="sound-toggle">Sound Effects</label>
+
+            <label class="toggle">
+
+              <input type="checkbox" id="sound-toggle" checked>
+
+              <span class="toggle-switch"></span>
+
+            </label>
+
+          </div>
+
+        </div>
+
+        
+
+        <div class="settings-section">
+
+          <h3 class="settings-section-title">Game Settings</h3>
+
+          
+
+          <div class="setting-row">
+
+            <label for="difficulty-select">Difficulty</label>
+
+            <select id="difficulty-select" class="difficulty-select">
+
+              <option value="easy">Easy</option>
+
+              <option value="medium" selected>Medium</option>
+
+              <option value="hard">Hard</option>
+
+            </select>
+
+          </div>
+
+          
+
+          <div class="setting-row">
+
+            <label for="autosave-toggle">Auto-Save Progress</label>
+
+            <label class="toggle">
+
+              <input type="checkbox" id="autosave-toggle" checked>
+
+              <span class="toggle-switch"></span>
+
+            </label>
+
+          </div>
+
+          
+
+          <button id="clear-data" class="danger-button">Clear Saved Data</button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <div id="badge-notification" class="badge-notification">
+
+    <div class="notification-icon">🏆</div>
+
+    <div class="notification-content">
+
+      <div id="notification-title" class="notification-title">Badge Unlocked!</div>
+
+      <div id="notification-description" class="notification-description">You've unlocked a new badge.</div>
+
+    </div>
+
+    <button class="notification-close" onclick="closeBadgeNotification()">×</button>
+
+  </div>
+
+
+  <div class="extra-space" style="height: 20vh; width: 100%;"></div>
+
+  <script>
+
+    // Game state
+
+    const gameState = {
+
+      currentScore: 0,
+
+      bestScore: 0, 
+
+      level: 1,
+
+      totalPatterns: 0,
+
+      currentPattern: [],
+
+      userPattern: [],
+
+      gamePhase: 'idle', // idle, computer, player, success, fail
+
+      activeButton: null,
+
+      isShowingPattern: false,
+
+      colorCounts: {
+
+        red: 0,
+
+        green: 0,
+
+        blue: 0,
+
+        yellow: 0
+
+      },
+
+      soundToggleCount: 0
+
+    };
+
+
+    // Game settings
+
+    const settings = {
+
+      musicEnabled: false,
+
+      soundEnabled: true,
+
+      volume: 70,
+
+      difficulty: 'medium',
+
+      autoSave: true
+
+    };
+
+
+    // Game stats
+
+    const stats = {
+
+      totalGames: 0,
+
+      highestScore: 0,
+
+      totalPatterns: 0,
+
+      totalScore: 0,
+
+      totalAttempts: 0,
+
+      correctAttempts: 0,
+
+      totalPlaytime: 0,
+
+      lastPlayed: 0,
+
+      gamesWonInRow: 0,
+
+      maxGamesWonInRow: 0
+
+    };
+
+
+    // Badge definitions
+
+    const badges = [
+
+      { id: 'first_pattern', name: 'First Steps', description: 'Complete your first pattern', icon: '🎮', unlocked: false },
+
+      { id: 'level_5', name: 'Getting Better', description: 'Reach level 5', icon: '📈', unlocked: false },
+
+      { id: 'level_10', name: 'Memory Master', description: 'Reach level 10', icon: '🧠', unlocked: false },
+
+      { id: 'level_15', name: 'Brain Champion', description: 'Reach level 15', icon: '🏅', unlocked: false },
+
+      { id: 'level_20', name: 'Memory Grandmaster', description: 'Reach level 20', icon: '🎓', unlocked: false },
+
+      { id: 'perfect_game', name: 'Perfect Game', description: 'Complete a game with no mistakes', icon: '💯', unlocked: false },
+
+      { id: 'speed_demon', name: 'Speed Demon', description: 'Complete a pattern in under 1 second', icon: '⚡', unlocked: false },
+
+      { id: 'speed_master', name: 'Lightning Fast', description: 'Complete a level 5+ pattern in under 2 seconds', icon: '⚡', unlocked: false },
+
+      { id: 'night_owl', name: 'Night Owl', description: 'Play a game after midnight', icon: '🦉', unlocked: false },
+
+      { id: 'early_bird', name: 'Early Bird', description: 'Play a game before 7 AM', icon: '🐦', unlocked: false },
+
+      { id: 'lunch_break', name: 'Lunch Break', description: 'Play a game between 12-1 PM', icon: '🍽️', unlocked: false },
+
+      { id: 'weekend_warrior', name: 'Weekend Warrior', description: 'Play on a Saturday or Sunday', icon: '🏞️', unlocked: false },
+
+      { id: 'daily_player', name: 'Daily Player', description: 'Play for 3 days in a row', icon: '📅', unlocked: false },
+
+      { id: 'weekly_dedication', name: 'Weekly Dedication', description: 'Play at least once every day for a week', icon: '📆', unlocked: false },
+
+      { id: 'addicted', name: 'Addicted', description: 'Play 10 games in a single day', icon: '😍', unlocked: false },
+
+      { id: 'comeback', name: 'Comeback Kid', description: 'Play again after not playing for a week', icon: '🔙', unlocked: false },
+
+      { id: 'high_score_5', name: 'High Scorer', description: 'Achieve a score of 5', icon: '🏆', unlocked: false },
+
+      { id: 'high_score_10', name: 'Champion', description: 'Achieve a score of 10', icon: '👑', unlocked: false },
+
+      { id: 'high_score_15', name: 'Legendary', description: 'Achieve a score of 15', icon: '🌟', unlocked: false },
+
+      { id: 'high_score_20', name: 'Superhuman', description: 'Achieve a score of 20', icon: '🦸', unlocked: false },
+
+      { id: 'winning_streak_3', name: 'Hat Trick', description: 'Win 3 games in a row', icon: '🎩', unlocked: false },
+
+      { id: 'winning_streak_5', name: 'Unstoppable', description: 'Win 5 games in a row', icon: '🔥', unlocked: false },
+
+      { id: 'winning_streak_10', name: 'Invincible', description: 'Win 10 games in a row', icon: '🛡️', unlocked: false },
+
+      { id: 'red_master', name: 'Red Master', description: 'Perfectly follow a pattern with 5 red buttons', icon: '🔴', unlocked: false },
+
+      { id: 'green_master', name: 'Green Master', description: 'Perfectly follow a pattern with 5 green buttons', icon: '🟢', unlocked: false },
+
+      { id: 'blue_master', name: 'Blue Master', description: 'Perfectly follow a pattern with 5 blue buttons', icon: '🔵', unlocked: false },
+
+      { id: 'yellow_master', name: 'Yellow Master', description: 'Perfectly follow a pattern with 5 yellow buttons', icon: '🟡', unlocked: false },
+
+      { id: 'hard_mode', name: 'Challenge Seeker', description: 'Complete a level on hard difficulty', icon: '😰', unlocked: false },
+
+      { id: 'sound_explorer', name: 'Sound Explorer', description: 'Toggle sound settings 5 times', icon: '🔊', unlocked: false },
+
+      { id: 'all_badges', name: 'Completionist', description: 'Unlock all other badges', icon: '🏆', unlocked: false }
+
+    ];
+
+
+    // Audio context and related variables
+
+    let audioContext = null;
+
+    let isAudioInitialized = false;
+
+    let musicOscillator = null;
+
+    let musicGainNode = null;
+
+    let backgroundMusicPlaying = false;
+
+
+    // DOM elements
+
+    const redButton = document.getElementById('red-button');
+
+    const greenButton = document.getElementById('green-button');
+
+    const blueButton = document.getElementById('blue-button');
+
+    const yellowButton = document.getElementById('yellow-button');
+
+    const startButton = document.getElementById('start-button');
+
+    const resetButton = document.getElementById('reset-button');
+
+    const gameMessage = document.getElementById('game-message');
+
+    const currentScoreDisplay = document.getElementById('current-score');
+
+    const bestScoreDisplay = document.getElementById('best-score');
+
+    const levelDisplay = document.getElementById('level');
+
+    const patternDotsContainer = document.getElementById('pattern-dots');
+
+    const musicToggle = document.getElementById('music-toggle');
+
+    const soundToggle = document.getElementById('sound-toggle');
+
+    const volumeSlider = document.getElementById('volume-slider');
+
+    const difficultySelect = document.getElementById('difficulty-select');
+
+    const autosaveToggle = document.getElementById('autosave-toggle');
+
+    const clearDataButton = document.getElementById('clear-data');
+
+    const badgeNotification = document.getElementById('badge-notification');
+
+
+    // Difficulty settings
+
+    const DIFFICULTY_SETTINGS = {
+
+      easy: { speed: 1000, startingLevel: 1 },
+
+      medium: { speed: 800, startingLevel: 1 },
+
+      hard: { speed: 600, startingLevel: 3 }
+
+    };
+
+
+    // Store timeouts so they can be cleared
+
+    let patternTimeout = null;
+
+    let gameStartTime = null;
+
+    let patternStartTime = null;
+
+
+    // Initialize the game
+
+    function init() {
+
+      loadFromLocalStorage();
+
+      renderBadges();
+
+      updateStats();
+
+      updateUI();
+
+      setupEventListeners();
+
+    }
+
+
+    // Load game state, settings and badges from localStorage
+
+    function loadFromLocalStorage() {
+
+      try {
+
+        // Load game state
+
+        const savedState = localStorage.getItem('gameState');
+
+        if (savedState) {
+
+          const parsedState = JSON.parse(savedState);
+
+          gameState.bestScore = parsedState.bestScore || 0;
+
+          gameState.level = parsedState.level || 1;
+
+          gameState.totalPatterns = parsedState.totalPatterns || 0;
+
+        }
+
+
+        // Load settings
+
+        const savedSettings = localStorage.getItem('gameSettings');
+
+        if (savedSettings) {
+
+          const parsedSettings = JSON.parse(savedSettings);
+
+          settings.musicEnabled = parsedSettings.isMusicEnabled !== undefined 
+
+            ? parsedSettings.isMusicEnabled 
+
+            : false;
+
+          settings.soundEnabled = parsedSettings.soundEffectsEnabled !== undefined 
+
+            ? parsedSettings.soundEffectsEnabled 
+
+            : true;
+
+          settings.volume = parsedSettings.volume !== undefined 
+
+            ? parsedSettings.volume 
+
+            : 70;
+
+          settings.difficulty = parsedSettings.difficulty || 'medium';
+
+          settings.autoSave = parsedSettings.autoSave !== undefined 
+
+            ? parsedSettings.autoSave 
+
+            : true;
+
+        }
+
+
+        // Load badges
+
+        const savedBadges = localStorage.getItem('gameBadges');
+
+        if (savedBadges) {
+
+          const unlockedBadges = JSON.parse(savedBadges);
+
+          badges.forEach(badge => {
+
+            badge.unlocked = unlockedBadges.includes(badge.id);
+
+          });
+
+        }
+
+
+        // Load stats
+
+        const savedStats = localStorage.getItem('gameStats');
+
+        if (savedStats) {
+
+          const parsedStats = JSON.parse(savedStats);
+
+          Object.assign(stats, parsedStats);
+
+        }
+
+
+        // Apply settings to UI elements
+
+        musicToggle.checked = settings.musicEnabled;
+
+        soundToggle.checked = settings.soundEnabled;
+
+        volumeSlider.value = settings.volume;
+
+        difficultySelect.value = settings.difficulty;
+
+        autosaveToggle.checked = settings.autoSave;
+
+      } catch (error) {
+
+        console.error('Error loading from localStorage:', error);
+
+      }
+
+    }
+
+
+    // Save current game state to localStorage
+
+    function saveToLocalStorage() {
+
+      try {
+
+        if (!settings.autoSave) return;
+
+
+        // Save game state
+
+        localStorage.setItem('gameState', JSON.stringify({
+
+          currentScore: gameState.currentScore,
+
+          bestScore: gameState.bestScore,
+
+          level: gameState.level,
+
+          totalPatterns: gameState.totalPatterns,
+
+          lastUpdated: Date.now()
+
+        }));
+
+
+        // Save settings
+
+        localStorage.setItem('gameSettings', JSON.stringify({
+
+          isMusicEnabled: settings.musicEnabled,
+
+          soundEffectsEnabled: settings.soundEnabled,
+
+          volume: settings.volume,
+
+          difficulty: settings.difficulty,
+
+          autoSave: settings.autoSave
+
+        }));
+
+
+        // Save badges
+
+        const unlockedBadgeIds = badges.filter(badge => badge.unlocked).map(badge => badge.id);
+
+        localStorage.setItem('gameBadges', JSON.stringify(unlockedBadgeIds));
+
+
+        // Save stats
+
+        localStorage.setItem('gameStats', JSON.stringify(stats));
+
+      } catch (error) {
+
+        console.error('Error saving to localStorage:', error);
+
+      }
+
+    }
+
+
+    // Set up event listeners
+
+    function setupEventListeners() {
+
+      // Game buttons
+
+      redButton.addEventListener('click', () => handleButtonClick('red'));
+
+      greenButton.addEventListener('click', () => handleButtonClick('green'));
+
+      blueButton.addEventListener('click', () => handleButtonClick('blue'));
+
+      yellowButton.addEventListener('click', () => handleButtonClick('yellow'));
+
+
+      // Control buttons
+
+      startButton.addEventListener('click', startGame);
+
+      resetButton.addEventListener('click', resetGame);
+
+
+      // Settings controls
+
+      musicToggle.addEventListener('change', () => {
+
+        settings.musicEnabled = musicToggle.checked;
+
+        if (settings.musicEnabled) {
+
+          initializeAudio();
+
+          playBackgroundMusic();
+
+        } else {
+
+          stopBackgroundMusic();
+
+        }
+
+        saveToLocalStorage();
+
+      });
+
+
+      soundToggle.addEventListener('change', () => {
+
+        settings.soundEnabled = soundToggle.checked;
+
+        saveToLocalStorage();
+
+      });
+
+
+      volumeSlider.addEventListener('input', () => {
+
+        settings.volume = parseInt(volumeSlider.value);
+
+        saveToLocalStorage();
+
+      });
+
+
+      difficultySelect.addEventListener('change', () => {
+
+        settings.difficulty = difficultySelect.value;
+
+        saveToLocalStorage();
+
+      });
+
+
+      autosaveToggle.addEventListener('change', () => {
+
+        settings.autoSave = autosaveToggle.checked;
+
+        saveToLocalStorage();
+
+      });
+
+
+      clearDataButton.addEventListener('click', clearGameData);
+
+    }
+
+
+    // Switch between tabs
+
+    function switchTab(tabName) {
+
+      const tabs = document.querySelectorAll('.tab');
+
+      const tabContents = document.querySelectorAll('.tab-content');
+
+
+      tabs.forEach(tab => {
+
+        tab.classList.remove('active');
+
+        if (tab.innerText.toLowerCase() === tabName) {
+
+          tab.classList.add('active');
+
+        }
+
+      });
+
+
+      tabContents.forEach(content => {
+
+        content.classList.remove('active');
+
+      });
+
+
+      document.getElementById(`${tabName}-tab`).classList.add('active');
+
+    }
+
+
+    // Update the UI to reflect current game state
+
+    function updateUI() {
+
+      currentScoreDisplay.textContent = gameState.currentScore;
+
+      bestScoreDisplay.textContent = gameState.bestScore;
+
+      levelDisplay.textContent = gameState.level;
+
+      
+
+      // Update pattern dots
+
+      updatePatternDots();
+
+      
+
+      // Update game buttons states
+
+      const buttons = [redButton, greenButton, blueButton, yellowButton];
+
+      const colors = ['red', 'green', 'blue', 'yellow'];
+
+      
+
+      buttons.forEach((button, index) => {
+
+        // Clear any existing active states
+
+        button.classList.remove('active');
+
+        
+
+        // Set active state if needed
+
+        if (gameState.activeButton === colors[index]) {
+
+          button.classList.add('active');
+
+        }
+
+        
+
+        // Enable/disable buttons based on game phase
+
+        button.disabled = gameState.gamePhase !== 'player' || gameState.isShowingPattern;
+
+      });
+
+    }
+
+
+    // Update the pattern dots to show progress
+
+    function updatePatternDots() {
+
+      patternDotsContainer.innerHTML = '';
+
+      
+
+      // No dots if no pattern
+
+      if (gameState.currentPattern.length === 0) return;
+
+      
+
+      // Create dots based on pattern length
+
+      for (let i = 0; i < gameState.currentPattern.length; i++) {
+
+        const dot = document.createElement('div');
+
+        dot.classList.add('pattern-dot');
+
+        
+
+        if (gameState.gamePhase === 'player' && i < gameState.userPattern.length) {
+
+          dot.classList.add('active');
+
+        }
+
+        
+
+        patternDotsContainer.appendChild(dot);
+
+      }
+
+    }
+
+
+    // Render badges in the badges tab
+
+    function renderBadges() {
+
+      const badgesGrid = document.getElementById('badges-grid');
+
+      badgesGrid.innerHTML = '';
+
+      
+
+      badges.forEach(badge => {
+
+        const badgeElement = document.createElement('div');
+
+        badgeElement.classList.add('badge-item');
+
+        
+
+        if (!badge.unlocked) {
+
+          badgeElement.classList.add('locked');
+
+        }
+
+        
+
+        badgeElement.innerHTML = `
+
+          <div class="badge-icon">${badge.icon}</div>
+
+          <div class="badge-name">${badge.name}</div>
+
+          <div class="badge-description">${badge.description}</div>
+
+        `;
+
+        
+
+        badgesGrid.appendChild(badgeElement);
+
+      });
+
+    }
+
+
+    // Update stats display
+
+    function updateStats() {
+
+      document.getElementById('stat-games').textContent = stats.totalGames;
+
+      document.getElementById('stat-high-score').textContent = stats.highestScore;
+
+      document.getElementById('stat-patterns').textContent = stats.totalPatterns;
+
+      document.getElementById('stat-total-score').textContent = stats.totalScore;
+
+      
+
+      const accuracy = stats.totalAttempts > 0 
+
+        ? Math.round((stats.correctAttempts / stats.totalAttempts) * 100) 
+
+        : 0;
+
+      document.getElementById('stat-accuracy').textContent = `${accuracy}%`;
+
+      
+
+      document.getElementById('stat-streak').textContent = stats.gamesWonInRow;
+
+      document.getElementById('stat-best-streak').textContent = stats.maxGamesWonInRow;
+
+      
+
+      const hours = Math.floor(stats.totalPlaytime / 3600);
+
+      document.getElementById('stat-playtime').textContent = `${hours}h`;
+
+    }
+
+
+    // Initialize audio system
+
+    function initializeAudio() {
+
+      if (isAudioInitialized) return;
+
+      
+
+      try {
+
+        // Set up Web Audio API
+
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+
+        if (AudioContext) {
+
+          audioContext = new AudioContext();
+
+          
+
+          // Resume audio context on first user interaction
+
+          if (audioContext.state === 'suspended') {
+
+            audioContext.resume();
+
+          }
+
+          
+
+          isAudioInitialized = true;
+
+        }
+
+      } catch (error) {
+
+        console.error('Web Audio API is not supported in this browser:', error);
+
+      }
+
+    }
+
+
+    // Play background music
+
+    function playBackgroundMusic() {
+
+      if (!audioContext || backgroundMusicPlaying) return;
+
+      
+
+      try {
+
+        // Make sure context is running
+
+        if (audioContext.state === 'suspended') {
+
+          audioContext.resume();
+
+        }
+
+        
+
+        // Create oscillator and gain node for the music
+
+        musicOscillator = audioContext.createOscillator();
+
+        musicGainNode = audioContext.createGain();
+
+        
+
+        // Set up the music oscillator
+
+        musicOscillator.type = 'sine';
+
+        
+
+        // Create a simple melody pattern that repeats
+
+        const startTime = audioContext.currentTime;
+
+        const noteLength = 0.5; // in seconds
+
+        const notes = [261.63, 329.63, 392.00, 523.25]; // C4, E4, G4, C5
+
+        
+
+        // Schedule the notes
+
+        for (let i = 0; i < 16; i++) {
+
+          const noteIndex = i % notes.length;
+
+          const noteTime = startTime + (i * noteLength);
+
+          musicOscillator.frequency.setValueAtTime(notes[noteIndex], noteTime);
+
+        }
+
+        
+
+        // Set volume based on settings
+
+        const volume = (settings.volume / 100) * 0.15; // Lower volume for background music
+
+        musicGainNode.gain.setValueAtTime(volume, audioContext.currentTime);
+
+        
+
+        // Connect the oscillator to the gain node and to the output
+
+        musicOscillator.connect(musicGainNode);
+
+        musicGainNode.connect(audioContext.destination);
+
+        
+
+        // Start the oscillator and set it to loop with some silence in between
+
+        musicOscillator.start();
+
+        
+
+        // Set up a loop for continuous music
+
+        musicOscillator.onended = () => {
+
+          if (settings.musicEnabled) {
+
+            playBackgroundMusic();
+
+          }
+
+        };
+
+        
+
+        settings.musicEnabled = true;
+
+        backgroundMusicPlaying = true;
+
+        
+
+        // Update UI
+
+        musicToggle.checked = true;
+
+      } catch (error) {
+
+        console.error('Error playing background music:', error);
+
+      }
+
+    }
+
+
+    // Stop background music
+
+    function stopBackgroundMusic() {
+
+      if (!backgroundMusicPlaying || !musicOscillator || !musicGainNode) return;
+
+      
+
+      try {
+
+        // Fade out and then stop
+
+        const now = audioContext.currentTime;
+
+        musicGainNode.gain.linearRampToValueAtTime(0, now + 0.5);
+
+        
+
+        // Stop oscillator after fade out
+
+        setTimeout(() => {
+
+          if (musicOscillator) {
+
+            musicOscillator.stop();
+
+            musicOscillator = null;
+
+          }
+
+          if (musicGainNode) {
+
+            musicGainNode.disconnect();
+
+            musicGainNode = null;
+
+          }
+
+          backgroundMusicPlaying = false;
+
+        }, 500);
+
+        
+
+        settings.musicEnabled = false;
+
+        musicToggle.checked = false;
+
+      } catch (error) {
+
+        console.error('Error stopping background music:', error);
+
+      }
+
+    }
+
+
+    // Play a sound for a given button
+
+    function playButtonSound(color) {
+
+      if (!settings.soundEnabled || !audioContext) return;
+
+      
+
+      try {
+
+        // Make sure context is running
+
+        if (audioContext.state === 'suspended') {
+
+          audioContext.resume();
+
+        }
+
+        
+
+        const frequencies = {
+
+          red: 329.63,    // E4
+
+          green: 392.00,   // G4
+
+          blue: 261.63,    // C4
+
+          yellow: 349.23   // F4
+
+        };
+
+        
+
+        const oscillator = audioContext.createOscillator();
+
+        const gainNode = audioContext.createGain();
+
+        
+
+        oscillator.type = 'sine';
+
+        oscillator.frequency.setValueAtTime(frequencies[color], audioContext.currentTime);
+
+        
+
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+
+        gainNode.gain.linearRampToValueAtTime(settings.volume / 100, audioContext.currentTime + 0.01);
+
+        gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.3);
+
+        
+
+        oscillator.connect(gainNode);
+
+        gainNode.connect(audioContext.destination);
+
+        
+
+        oscillator.start();
+
+        oscillator.stop(audioContext.currentTime + 0.3);
+
+      } catch (error) {
+
+        console.error('Error playing button sound:', error);
+
+      }
+
+    }
+
+
+    // Play success sound
+
+    function playSuccessSound() {
+
+      if (!settings.soundEnabled || !audioContext) return;
+
+      
+
+      try {
+
+        const oscillator = audioContext.createOscillator();
+
+        const gainNode = audioContext.createGain();
+
+        
+
+        oscillator.type = 'sine';
+
+        oscillator.frequency.setValueAtTime(523.25, audioContext.currentTime); // C5
+
+        oscillator.frequency.setValueAtTime(659.25, audioContext.currentTime + 0.2); // E5
+
+        oscillator.frequency.setValueAtTime(783.99, audioContext.currentTime + 0.4); // G5
+
+        
+
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+
+        gainNode.gain.linearRampToValueAtTime(settings.volume / 100, audioContext.currentTime + 0.01);
+
+        gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.6);
+
+        
+
+        oscillator.connect(gainNode);
+
+        gainNode.connect(audioContext.destination);
+
+        
+
+        oscillator.start();
+
+        oscillator.stop(audioContext.currentTime + 0.6);
+
+      } catch (error) {
+
+        console.error('Error playing success sound:', error);
+
+      }
+
+    }
+
+
+    // Play error sound
+
+    function playErrorSound() {
+
+      if (!settings.soundEnabled || !audioContext) return;
+
+      
+
+      try {
+
+        const oscillator = audioContext.createOscillator();
+
+        const gainNode = audioContext.createGain();
+
+        
+
+        oscillator.type = 'sawtooth';
+
+        oscillator.frequency.setValueAtTime(220, audioContext.currentTime); // A3
+
+        oscillator.frequency.setValueAtTime(196, audioContext.currentTime + 0.2); // G3
+
+        
+
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+
+        gainNode.gain.linearRampToValueAtTime(settings.volume / 100 * 0.5, audioContext.currentTime + 0.01);
+
+        gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.4);
+
+        
+
+        oscillator.connect(gainNode);
+
+        gainNode.connect(audioContext.destination);
+
+        
+
+        oscillator.start();
+
+        oscillator.stop(audioContext.currentTime + 0.4);
+
+      } catch (error) {
+
+        console.error('Error playing error sound:', error);
+
+      }
+
+    }
+
+
+    // Show badge notification
+
+    function showBadgeNotification(badge) {
+
+      document.getElementById('notification-title').textContent = `Badge Unlocked: ${badge.name}`;
+
+      document.getElementById('notification-description').textContent = badge.description;
+
+      badgeNotification.classList.add('show');
+
+      
+
+      // Hide after 5 seconds
+
+      setTimeout(() => {
+
+        closeBadgeNotification();
+
+      }, 5000);
+
+    }
+
+
+    // Close badge notification
+
+    function closeBadgeNotification() {
+
+      badgeNotification.classList.remove('show');
+
+    }
+
+
+    // Start a new game
+
+    function startGame() {
+
+      // Initialize audio on first user interaction
+
+      initializeAudio();
+
+      
+
+      // Clear any existing timeouts
+
+      if (patternTimeout) {
+
+        clearTimeout(patternTimeout);
+
+      }
+
+      
+
+      // Reset game state for a new game
+
+      const difficulty = settings.difficulty || 'medium';
+
+      const startingLevel = DIFFICULTY_SETTINGS[difficulty].startingLevel;
+
+      
+
+      gameState.currentScore = 0;
+
+      gameState.level = startingLevel;
+
+      gameState.userPattern = [];
+
+      gameState.gamePhase = 'computer';
+
+      gameState.isShowingPattern = false;
+
+      
+
+      // Update message
+
+      gameMessage.textContent = 'Watch the pattern';
+
+      
+
+      // Generate first pattern
+
+      gameState.currentPattern = generatePattern();
+
+      
+
+      // Start tracking game time
+
+      gameStartTime = Date.now();
+
+      
+
+      // Show the pattern after a short delay
+
+      patternTimeout = setTimeout(() => {
+
+        showPattern();
+
+      }, 300);
+
+      
+
+      // Update UI
+
+      updateUI();
+
+      
+
+      // Save state
+
+      saveToLocalStorage();
+
+    }
+
+
+    // Reset the game
+
+    function resetGame() {
+
+      // Clear any existing timeouts
+
+      if (patternTimeout) {
+
+        clearTimeout(patternTimeout);
+
+      }
+
+      
+
+      // Reset game state
+
+      gameState.userPattern = [];
+
+      gameState.currentPattern = [];
+
+      gameState.gamePhase = 'idle';
+
+      gameState.activeButton = null;
+
+      gameState.isShowingPattern = false;
+
+      
+
+      // Update message
+
+      gameMessage.textContent = 'Press Start to Play';
+
+      
+
+      // Update game stats if game was in progress
+
+      if (gameStartTime) {
+
+        const gameDuration = (Date.now() - gameStartTime) / 1000;
+
+        stats.totalPlaytime += gameDuration;
+
+        gameStartTime = null;
+
+      }
+
+      
+
+      // Check for new badges
+
+      checkForNewBadges();
+
+      
+
+      // Update UI
+
+      updateUI();
+
+      
+
+      // Save state
+
+      saveToLocalStorage();
+
+    }
+
+
+    // Generate a pattern based on current level, building on previous patterns
+
+    function generatePattern() {
+
+      const buttons = ['red', 'green', 'blue', 'yellow'];
+
+      let pattern = [];
+
+      
+
+      // If we already have a pattern, keep it and add one more button
+
+      if (gameState.currentPattern.length > 0 && gameState.gamePhase !== 'idle') {
+
+        pattern = [...gameState.currentPattern];
+
+        // Add one more random button to the existing pattern
+
+        const randomIndex = Math.floor(Math.random() * buttons.length);
+
+        pattern.push(buttons[randomIndex]);
+
+      } else {
+
+        // Starting a new game, create a pattern from scratch based on level
+
+        const patternLength = gameState.level;
+
+        for (let i = 0; i < patternLength; i++) {
+
+          const randomIndex = Math.floor(Math.random() * buttons.length);
+
+          pattern.push(buttons[randomIndex]);
+
+        }
+
+      }
+
+      
+
+      return pattern;
+
+    }
+
+
+    // Show the pattern to the user
+
+    function showPattern() {
+
+      if (!gameState.currentPattern.length) return;
+
+      
+
+      gameState.isShowingPattern = true;
+
+      let currentIndex = 0;
+
+      
+
+      const flashNextButton = () => {
+
+        if (currentIndex >= gameState.currentPattern.length) {
+
+          // Pattern complete, player's turn
+
+          gameState.isShowingPattern = false;
+
+          gameState.activeButton = null;
+
+          gameState.gamePhase = 'player';
+
+          gameMessage.textContent = 'Your turn! Repeat the pattern';
+
+          patternStartTime = Date.now();
+
+          updateUI();
+
+          return;
+
+        }
+
+        
+
+        const button = gameState.currentPattern[currentIndex];
+
+        gameState.activeButton = button;
+
+        
+
+        // Play sound for this button
+
+        playButtonSound(button);
+
+        
+
+        // Update UI
+
+        updateUI();
+
+        
+
+        // Calculate speed based on difficulty
+
+        const speed = DIFFICULTY_SETTINGS[settings.difficulty].speed;
+
+        
+
+        // Clear active button after a delay
+
+        patternTimeout = setTimeout(() => {
+
+          gameState.activeButton = null;
+
+          updateUI();
+
+          currentIndex++;
+
+          
+
+          // Wait before showing next button
+
+          patternTimeout = setTimeout(flashNextButton, speed / 2);
+
+        }, speed / 2);
+
+      };
+
+      
+
+      // Start the pattern display
+
+      flashNextButton();
+
+    }
+
+
+    // Handle button click during player's turn
+
+    function handleButtonClick(color) {
+
+      // Initialize audio on first click
+
+      initializeAudio();
+
+      
+
+      // Play button sound for feedback
+
+      playButtonSound(color);
+
+      
+
+      if (gameState.gamePhase !== 'player') return;
+
+      
+
+      // Add button to user pattern
+
+      gameState.userPattern.push(color);
+
+      
+
+      // Check if the button is correct
+
+      const currentIndex = gameState.userPattern.length - 1;
+
+      
+
+      // Make sure we don't go out of bounds
+
+      if (currentIndex >= gameState.currentPattern.length) {
+
+        return;
+
+      }
+
+      
+
+      const isCorrect = gameState.userPattern[currentIndex] === gameState.currentPattern[currentIndex];
+
+      
+
+      if (!isCorrect) {
+
+        // Pattern is incorrect
+
+        handleFailure();
+
+        return;
+
+      }
+
+      
+
+      // Update UI
+
+      updateUI();
+
+      
+
+      // Check if pattern is complete
+
+      if (gameState.userPattern.length === gameState.currentPattern.length) {
+
+        // Pattern is complete and correct
+
+        handleSuccess();
+
+      }
+
+    }
+
+
+    // Handle successful pattern completion
+
+    function handleSuccess() {
+
+      // Clear any existing timeouts
+
+      if (patternTimeout) {
+
+        clearTimeout(patternTimeout);
+
+      }
+
+      
+
+      // Record pattern completion time
+
+      const patternTime = patternStartTime ? (Date.now() - patternStartTime) / 1000 : 0;
+
+      
+
+      // Update stats
+
+      stats.totalAttempts += gameState.currentPattern.length;
+
+      stats.correctAttempts += gameState.currentPattern.length;
+
+      stats.totalPatterns++;
+
+      
+
+      // Check for speed badge
+
+      if (patternTime > 0 && patternTime < 1) {
+
+        unlockBadge('speed_demon');
+
+      }
+
+      
+
+      // Play success sound
+
+      playSuccessSound();
+
+      
+
+      // Update score and level
+
+      gameState.currentScore += 1;
+
+      gameState.level += 1;
+
+      gameState.totalPatterns += 1;
+
+      
+
+      // Update best score if needed
+
+      if (gameState.currentScore > gameState.bestScore) {
+
+        gameState.bestScore = gameState.currentScore;
+
+      }
+
+      
+
+      // Check for score badges
+
+      if (gameState.currentScore >= 5) {
+
+        unlockBadge('high_score_5');
+
+      }
+
+      if (gameState.currentScore >= 10) {
+
+        unlockBadge('high_score_10');
+
+      }
+
+      if (gameState.currentScore >= 15) {
+
+        unlockBadge('high_score_15');
+
+      }
+
+      
+
+      // Check for level badges
+
+      if (gameState.level >= 5) {
+
+        unlockBadge('level_5');
+
+      }
+
+      if (gameState.level >= 10) {
+
+        unlockBadge('level_10');
+
+      }
+
+      
+
+      // First pattern badge
+
+      unlockBadge('first_pattern');
+
+      
+
+      // Show success message
+
+      gameState.gamePhase = 'success';
+
+      gameMessage.textContent = 'Correct! Get ready for the next pattern';
+
+      
+
+      // Reset user pattern
+
+      gameState.userPattern = [];
+
+      
+
+      // Update UI
+
+      updateUI();
+
+      
+
+      // Save state
+
+      saveToLocalStorage();
+
+      
+
+      // Generate next pattern after a delay
+
+      patternTimeout = setTimeout(() => {
+
+        gameState.currentPattern = generatePattern();
+
+        gameState.gamePhase = 'computer';
+
+        gameMessage.textContent = 'Watch the pattern';
+
+        
+
+        // Show the pattern
+
+        patternTimeout = setTimeout(() => {
+
+          showPattern();
+
+        }, 500);
+
+      }, 1500);
+
+    }
+
+
+    // Handle failed pattern attempt
+
+    function handleFailure() {
+
+      // Clear any existing timeouts
+
+      if (patternTimeout) {
+
+        clearTimeout(patternTimeout);
+
+      }
+
+      
+
+      // Update stats
+
+      stats.totalGames++;
+
+      stats.totalAttempts += gameState.userPattern.length;
+
+      stats.correctAttempts += gameState.userPattern.length - 1; // -1 because last one was wrong
+
+      stats.totalScore += gameState.currentScore;
+
+      
+
+      // Reset level to starting level based on difficulty
+
+      const difficulty = settings.difficulty || 'medium';
+
+      gameState.level = DIFFICULTY_SETTINGS[difficulty].startingLevel;
+
+      
+
+      if (gameState.currentScore > stats.highestScore) {
+
+        stats.highestScore = gameState.currentScore;
+
+      }
+
+      
+
+      // Reset win streak
+
+      stats.gamesWonInRow = 0;
+
+      
+
+      // Update total playtime
+
+      if (gameStartTime) {
+
+        const gameDuration = (Date.now() - gameStartTime) / 1000;
+
+        stats.totalPlaytime += gameDuration;
+
+        gameStartTime = null;
+
+      }
+
+      
+
+      // Play error sound
+
+      playErrorSound();
+
+      
+
+      // Show failure message
+
+      gameState.gamePhase = 'fail';
+
+      gameMessage.textContent = `Game Over! Your score: ${gameState.currentScore}`;
+
+      
+
+      // Update UI
+
+      updateUI();
+
+      
+
+      // Save state
+
+      saveToLocalStorage();
+
+    }
+
+
+    // Unlock a badge
+
+    function unlockBadge(badgeId) {
+
+      const badge = badges.find(b => b.id === badgeId);
+
+      if (badge && !badge.unlocked) {
+
+        badge.unlocked = true;
+
+        showBadgeNotification(badge);
+
+        renderBadges();
+
+        saveToLocalStorage();
+
+      }
+
+    }
+
+
+    // Check for new badges based on current stats and state
+
+    function checkForNewBadges() {
+
+      const now = new Date();
+
+      const currentHour = now.getHours();
+
+      const currentDay = now.getDay(); // 0 = Sunday, 6 = Saturday
+
+      
+
+      // Time-based badges
+
+      if (currentHour < 7) {
+
+        unlockBadge('early_bird');
+
+      }
+
+      
+
+      if (currentHour >= 0 && currentHour < 6) {
+
+        unlockBadge('night_owl');
+
+      }
+
+      
+
+      if (currentHour >= 12 && currentHour < 13) {
+
+        unlockBadge('lunch_break');
+
+      }
+
+      
+
+      // Weekend warrior badge
+
+      if (currentDay === 0 || currentDay === 6) {
+
+        unlockBadge('weekend_warrior');
+
+      }
+
+      
+
+      // Check if the user is playing on hard difficulty
+
+      if (settings.difficulty === 'hard') {
+
+        unlockBadge('hard_mode');
+
+      }
+
+      
+
+      // Level badges
+
+      if (gameState.level >= 15) {
+
+        unlockBadge('level_15');
+
+      }
+
+      
+
+      if (gameState.level >= 20) {
+
+        unlockBadge('level_20');
+
+      }
+
+      
+
+      // High score badges
+
+      if (gameState.bestScore >= 20) {
+
+        unlockBadge('high_score_20');
+
+      }
+
+      
+
+      // Win streak badges
+
+      if (stats.maxGamesWonInRow >= 10) {
+
+        unlockBadge('winning_streak_10');
+
+      }
+
+      
+
+      // Daily streak badges are handled separately in localStorage loading/saving
+
+      
+
+      // Check for comeback badge - last played more than 7 days ago
+
+      const timestamp = Date.now();
+
+      const dayInMs = 24 * 60 * 60 * 1000;
+
+      if (stats.lastPlayed > 0 && timestamp - stats.lastPlayed > 7 * dayInMs) {
+
+        unlockBadge('comeback');
+
+      }
+
+      
+
+      // Check for completionist badge
+
+      const totalBadges = badges.length;
+
+      const unlockedBadges = badges.filter(badge => badge.unlocked).length;
+
+      if (unlockedBadges >= totalBadges - 1) { // -1 because we don't count the completionist badge itself
+
+        unlockBadge('all_badges');
+
+      }
+
+      
+
+      // Update last played time
+
+      stats.lastPlayed = timestamp;
+
+    }
+
+
+    // Clear all game data
+
+    function clearGameData() {
+
+      if (confirm('Are you sure you want to clear all saved game data? This cannot be undone.')) {
+
+        localStorage.removeItem('gameState');
+
+        localStorage.removeItem('gameSettings');
+
+        localStorage.removeItem('gameBadges');
+
+        localStorage.removeItem('gameStats');
+
+        
+
+        // Reset current game state
+
+        gameState.currentScore = 0;
+
+        gameState.bestScore = 0;
+
+        gameState.level = 1;
+
+        gameState.totalPatterns = 0;
+
+        gameState.currentPattern = [];
+
+        gameState.userPattern = [];
+
+        gameState.gamePhase = 'idle';
+
+        gameState.activeButton = null;
+
+        
+
+        // Reset badges
+
+        badges.forEach(badge => {
+
+          badge.unlocked = false;
+
+        });
+
+        
+
+        // Reset stats
+
+        Object.keys(stats).forEach(key => {
+
+          stats[key] = 0;
+
+        });
+
+        
+
+        // Reset UI
+
+        updateUI();
+
+        renderBadges();
+
+        updateStats();
+
+        
+
+        gameMessage.textContent = 'Game data cleared. Press Start to Play.';
+
+      }
+
+    }
+
+
+    // Initialize the game when the DOM is loaded
+
+    document.addEventListener('DOMContentLoaded', init);
+
+  </script>
+
+</body>
+
+</html>
+
+
+
+
