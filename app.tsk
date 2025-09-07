@@ -1,0 +1,82 @@
+import { Canvas } from "@react-three/fiber";
+import { Suspense, useState } from "react";
+import { KeyboardControls } from "@react-three/drei";
+import "@fontsource/inter";
+import CarGame from "./components/CarGame";
+import MapSelector from "./components/MapSelector";
+import GameUI from "./components/GameUI";
+
+// Define control keys for the car game
+enum Controls {
+  forward = 'forward',
+  backward = 'backward',
+  left = 'left',
+  right = 'right',
+  brake = 'brake'
+}
+
+const controls = [
+  { name: Controls.forward, keys: ['KeyW', 'ArrowUp'] },
+  { name: Controls.backward, keys: ['KeyS', 'ArrowDown'] },
+  { name: Controls.left, keys: ['KeyA', 'ArrowLeft'] },
+  { name: Controls.right, keys: ['KeyD', 'ArrowRight'] },
+  { name: Controls.brake, keys: ['Space'] }
+];
+
+function App() {
+  const [selectedMap, setSelectedMap] = useState<string>('empty-fields');
+  const [gameStarted, setGameStarted] = useState(false);
+
+  return (
+    <div style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden', background: '#000' }}>
+      {!gameStarted ? (
+        <MapSelector 
+          selectedMap={selectedMap} 
+          onMapSelect={setSelectedMap}
+          onStartGame={() => setGameStarted(true)}
+        />
+      ) : (
+        <KeyboardControls map={controls}>
+          <Canvas
+            shadows
+            camera={{
+              position: [0, 10, 20],
+              fov: 60,
+              near: 0.1,
+              far: 10000
+            }}
+            gl={{
+              antialias: true,
+              powerPreference: "high-performance"
+            }}
+          >
+            <color attach="background" args={["#87CEEB"]} />
+            
+            {/* Lighting */}
+            <ambientLight intensity={0.4} />
+            <directionalLight 
+              position={[100, 100, 50]} 
+              intensity={1} 
+              castShadow
+              shadow-mapSize-width={2048}
+              shadow-mapSize-height={2048}
+              shadow-camera-far={1000}
+              shadow-camera-left={-500}
+              shadow-camera-right={500}
+              shadow-camera-top={500}
+              shadow-camera-bottom={-500}
+            />
+
+            <Suspense fallback={null}>
+              <CarGame mapType={selectedMap} />
+            </Suspense>
+          </Canvas>
+          
+          <GameUI onBackToMenu={() => setGameStarted(false)} />
+        </KeyboardControls>
+      )}
+    </div>
+  );
+}
+
+export default App;
