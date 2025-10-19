@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Game Test</title>
+    <style>
+        body { font-family: Arial; text-align: center; margin: 50px; }
+        #game { background: #f0f0f0; padding: 20px; border-radius: 10px; }
+        button { padding: 10px 20px; font-size: 16px; margin: 10px; }
+    </style>
+</head>
+<body>
+    <div id="game">
+        <h2>Click Counter Game</h2>
+        <p>Score: <span id="score">0</span></p>
+        <button onclick="addPoint()">Click Me!</button>
+        <button onclick="resetGame()">Reset</button>
+        <p id="message"></p>
+    </div>
+
+    <script>
+        let score = 0;
+        
+        function addPoint() {
+            score++;
+            document.getElementById('score').textContent = score;
+            
+            if(score === 10) {
+                document.getElementById('message').textContent = "You won! This is how HTML games work.";
+            }
+        }
+        
+        function resetGame() {
+            score = 0;
+            document.getElementById('score').textContent = score;
+            document.getElementById('message').textContent = "";
+        }
+    </script>
+</body>
+</
